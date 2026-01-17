@@ -3,12 +3,13 @@ const Market = @import("market.zig").Market;
 const Portfolio = @import("portfolio.zig").Portfolio;
 const BacktestResult = @import("../result.zig").BacktestResult;
 const Strategy = @import("../strategy/strategy.zig").Strategy;
+const DumbStrategy = @import("../strategy/dumb.zig").DumbStrategy;
 
 pub const Engine = struct {
     market: Market,
     portfolio: Portfolio,
     time: usize,
-    strategy: Strategy,
+    strategy: DumbStrategy,
 
     pub fn run(self: *Engine) BacktestResult {
         var rejected_buys: usize = 0;
