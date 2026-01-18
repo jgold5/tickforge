@@ -5,6 +5,7 @@ const Strategy = @import("strategy/strategy.zig").Strategy;
 const Dumb = @import("strategy/dumb.zig");
 const Engine = @import("engine/engine.zig").Engine;
 const BacktestResult = @import("result.zig").BacktestResult;
+const BacktestConfig = @import("backtest/config.zig").BacktestConfig;
 const BuyEveryTick = @import("strategy/buy_every_tick.zig");
 
 pub fn main() !void {
@@ -12,8 +13,8 @@ pub fn main() !void {
     var start: usize = 0;
     _ = &start;
     const mkt = Market{ .prices = prices[start..] };
-    const starting_cash = 100;
-    const portfolio = Portfolio.init(starting_cash);
+    const backtest_config = BacktestConfig{ .starting_cash = 100 };
+    const portfolio = Portfolio.init(backtest_config.starting_cash);
     var dumbStrategy = Dumb.DumbStrategy{};
     var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = Dumb.toStrategy(&dumbStrategy), .time = 0 };
     //var buy_every_tick = BuyEveryTick.BuyEveryTick{};
@@ -22,5 +23,5 @@ pub fn main() !void {
     const last_price = mkt.price_at(prices.len - 1);
     std.debug.print("Backtest Result: {any}\n", .{result});
     std.debug.print("Final Equity: ${d}\n", .{result.finalEquity(last_price)});
-    std.debug.print("PnL: ${d}\n", .{result.pnl(starting_cash, last_price)});
+    std.debug.print("PnL: ${d}\n", .{result.pnl(backtest_config.starting_cash, last_price)});
 }
