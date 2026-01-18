@@ -1,3 +1,5 @@
+const Trade = @import("engine/trade.zig").Trade;
+
 pub const BacktestResult = struct {
     final_cash: f64,
     final_position: f64,
@@ -5,6 +7,7 @@ pub const BacktestResult = struct {
     executed_sells: usize,
     rejected_buys: usize,
     rejected_sells: usize,
+    trades: []Trade,
 
     pub fn finalEquity(self: *const BacktestResult, final_price: f64) f64 {
         return self.final_cash + (self.final_position * final_price);
