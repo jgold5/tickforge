@@ -5,12 +5,13 @@ const BacktestResult = @import("../result.zig").BacktestResult;
 const Strategy = @import("../strategy/strategy.zig").Strategy;
 const DumbStrategy = @import("../strategy/dumb.zig").DumbStrategy;
 const Intent = @import("../strategy/intent.zig").Intent;
+const BuyEveryTick = @import("../strategy/buy_every_tick.zig").BuyEveryTick;
 
 pub const Engine = struct {
     market: Market,
     portfolio: Portfolio,
     time: usize,
-    strategy: DumbStrategy,
+    strategy: BuyEveryTick,
 
     pub fn run(self: *Engine) BacktestResult {
         var rejected_buys: usize = 0;
