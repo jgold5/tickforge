@@ -32,7 +32,6 @@ pub const Engine = struct {
     }
 
     fn execute(self: *Engine, intent: Intent, price: f64, executed_buys: *usize, executed_sells: *usize, rejected_buys: *usize, rejected_sells: *usize, trade_list: *std.ArrayList(Trade), time: usize) !void {
-        std.debug.print("intent: {any} @ price: {d}\n", .{ intent, price });
         switch (intent) {
             .Hold => {},
             .Buy => |qty| {

@@ -7,22 +7,17 @@ const Engine = @import("engine/engine.zig").Engine;
 const BacktestResult = @import("result.zig").BacktestResult;
 const BacktestConfig = @import("backtest/config.zig").BacktestConfig;
 const BuyEveryTick = @import("strategy/buy_every_tick.zig");
+const runner = @import("research/runner.zig");
 
 pub fn main() !void {
     var prices = [_]f64{ 1.0, 2.0, 3.0, 4.0, 5.0 };
-    var start: usize = 0;
-    _ = &start;
     const allocator = std.heap.page_allocator;
-    const mkt = Market{ .prices = prices[start..] };
-    const backtest_config = BacktestConfig{ .starting_cash = 100 };
-    const portfolio = Portfolio.init(backtest_config.starting_cash);
-    //var dumbStrategy = Dumb.DumbStrategy{};
-    //var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = Dumb.toStrategy(&dumbStrategy), .time = 0 };
+    const market = Market{ .prices = prices[0..] };
+    const backtest_config = BacktestConfig{ .starting_cash = 1 };
+    var dumb = Dumb.DumbStrategy{};
+    const dumb_strategy = Dumb.toStrategy(&dumb);
     var buy_every_tick = BuyEveryTick.BuyEveryTick{};
-    var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = BuyEveryTick.toStrategy(&buy_every_tick), .time = 0 };
-    const result = try engine.run(allocator);
-    const last_price = mkt.price_at(prices.len - 1);
-    std.debug.print("Backtest Result: {any}\n", .{result});
-    std.debug.print("Final Equity: ${d}\n", .{result.finalEquity(last_price)});
-    std.debug.print("PnL: ${d}\n", .{result.pnl(backtest_config.starting_cash, last_price)});
+    const buy_every_tick_strategy = BuyEveryTick.toStrategy(&buy_every_tick);
+    var strategies = [_]Strategy{ dumb_strategy, buy_every_tick_strategy };
+    try runner.run_batch(allocator, market, backtest_config, strategies[0..]);
 }
