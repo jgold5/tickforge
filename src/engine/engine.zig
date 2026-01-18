@@ -11,7 +11,7 @@ pub const Engine = struct {
     market: Market,
     portfolio: Portfolio,
     time: usize,
-    strategy: BuyEveryTick,
+    strategy: Strategy,
 
     pub fn run(self: *Engine) BacktestResult {
         var rejected_buys: usize = 0;

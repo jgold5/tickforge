@@ -1,5 +1,6 @@
 const Intent = @import("intent.zig").Intent;
 const Portfolio = @import("../engine/portfolio.zig").Portfolio;
+const Strategy = @import("../strategy/strategy.zig").Strategy;
 
 pub const DumbStrategy = struct {
     pub fn decide(self: DumbStrategy, current_price: f64, portfolio_snap: *const Portfolio, current_time: usize) Intent {
@@ -15,3 +16,12 @@ pub const DumbStrategy = struct {
         return Intent.Hold;
     }
 };
+
+pub fn dumbDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_snap: *const Portfolio, current_time: usize) Intent {
+    const dumb: *DumbStrategy = @ptrCast(@alignCast(ctx));
+    return dumb.decide(current_price, portfolio_snap, current_time);
+}
+
+pub fn toStrategy(dumb: *DumbStrategy) Strategy {
+    return Strategy{ .ctx = dumb, .decideFn = dumbDecideAdapter };
+}
