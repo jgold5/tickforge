@@ -12,11 +12,15 @@ pub fn main() !void {
     var start: usize = 0;
     _ = &start;
     const mkt = Market{ .prices = prices[start..] };
-    const portfolio = Portfolio.init(2);
+    const starting_cash = 100;
+    const portfolio = Portfolio.init(starting_cash);
     var dumbStrategy = Dumb.DumbStrategy{};
     var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = Dumb.toStrategy(&dumbStrategy), .time = 0 };
     //var buy_every_tick = BuyEveryTick.BuyEveryTick{};
     //var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = BuyEveryTick.toStrategy(&buy_every_tick), .time = 0 };
     const result = engine.run();
+    const last_price = mkt.price_at(prices.len - 1);
     std.debug.print("Backtest Result: {any}\n", .{result});
+    std.debug.print("Final Equity: ${d}\n", .{result.finalEquity(last_price)});
+    std.debug.print("PnL: ${d}\n", .{result.pnl(starting_cash, last_price)});
 }
