@@ -7,10 +7,10 @@ pub const DumbStrategy = struct {
         _ = current_price;
         _ = portfolio_snap;
         if (current_time == 0) {
-            return Intent.Buy;
+            return Intent{ .Buy = 1 };
         }
         if (current_time == 1) {
-            return Intent.Sell;
+            return Intent{ .Sell = 1 };
         }
         return Intent.Hold;
     }

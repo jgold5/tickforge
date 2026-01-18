@@ -27,21 +27,22 @@ pub const Engine = struct {
     }
 
     fn execute(self: *Engine, intent: Intent, price: f64, rejected_buys: *usize, rejected_sells: *usize) void {
+        std.debug.print("intent: {any} @ price: {d}\n", .{ intent, price });
         switch (intent) {
             .Hold => {},
-            .Buy => {
-                if (self.portfolio.cash >= price) {
-                    self.portfolio.cash -= price;
-                    self.portfolio.position += 1;
+            .Buy => |qty| {
+                if (self.portfolio.cash >= (price * qty)) {
+                    self.portfolio.cash -= (price * qty);
+                    self.portfolio.position += qty;
                 } else {
                     rejected_buys.* += 1;
                 }
                 std.debug.assert(self.portfolio.cash >= 0);
             },
-            .Sell => {
-                if (self.portfolio.position >= 1) {
-                    self.portfolio.cash += price;
-                    self.portfolio.position -= 1;
+            .Sell => |qty| {
+                if (self.portfolio.position >= qty) {
+                    self.portfolio.cash += (price * qty);
+                    self.portfolio.position -= qty;
                 } else {
                     rejected_sells.* += 1;
                 }

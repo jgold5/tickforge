@@ -1,5 +1,5 @@
-pub const Intent = enum {
+pub const Intent = union(enum) {
     Hold,
-    Buy,
-    Sell,
+    Buy: f64,
+    Sell: f64,
 };

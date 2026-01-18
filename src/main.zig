@@ -14,5 +14,5 @@ pub fn main() !void {
     const portfolio = Portfolio.init(300);
     var engine = Engine{ .market = mkt, .portfolio = portfolio, .strategy = DumbStrategy{}, .time = 0 };
     const result = engine.run();
-    _ = result;
+    std.debug.print("Backtest Result: {any}\n", .{result});
 }

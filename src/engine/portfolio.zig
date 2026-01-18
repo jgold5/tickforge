@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Portfolio = struct {
     cash: f64,
     position: f64,
