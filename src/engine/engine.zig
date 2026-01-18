@@ -4,6 +4,7 @@ const Portfolio = @import("portfolio.zig").Portfolio;
 const BacktestResult = @import("../result.zig").BacktestResult;
 const Strategy = @import("../strategy/strategy.zig").Strategy;
 const DumbStrategy = @import("../strategy/dumb.zig").DumbStrategy;
+const Intent = @import("../strategy/intent.zig").Intent;
 
 pub const Engine = struct {
     market: Market,
@@ -17,30 +18,35 @@ pub const Engine = struct {
         while (self.time < self.market.len()) {
             const price = self.market.price_at(self.time);
             const intent = self.strategy.decide(price, &self.portfolio, self.time);
-            switch (intent) {
-                .Hold => {},
-                .Buy => {
-                    if (self.portfolio.cash >= price) {
-                        self.portfolio.cash -= price;
-                        self.portfolio.position += 1;
-                    } else {
-                        rejected_buys += 1;
-                    }
-                    std.debug.assert(self.portfolio.cash >= 0);
-                },
-                .Sell => {
-                    if (self.portfolio.position >= 1) {
-                        self.portfolio.cash += price;
-                        self.portfolio.position -= 1;
-                    } else {
-                        rejected_sells += 1;
-                    }
-                    std.debug.assert(self.portfolio.position >= 0);
-                },
-            }
+            //intent execution
+            self.execute(intent, price, &rejected_buys, &rejected_sells);
             self.time += 1;
         }
         const curr_price = self.market.price_at(self.time - 1);
         return BacktestResult{ .final_value = self.portfolio.value(curr_price), .rejected_buys = rejected_buys, .rejected_sells = rejected_sells };
+    }
+
+    fn execute(self: *Engine, intent: Intent, price: f64, rejected_buys: *usize, rejected_sells: *usize) void {
+        switch (intent) {
+            .Hold => {},
+            .Buy => {
+                if (self.portfolio.cash >= price) {
+                    self.portfolio.cash -= price;
+                    self.portfolio.position += 1;
+                } else {
+                    rejected_buys.* += 1;
+                }
+                std.debug.assert(self.portfolio.cash >= 0);
+            },
+            .Sell => {
+                if (self.portfolio.position >= 1) {
+                    self.portfolio.cash += price;
+                    self.portfolio.position -= 1;
+                } else {
+                    rejected_sells.* += 1;
+                }
+                std.debug.assert(self.portfolio.position >= 0);
+            },
+        }
     }
 };
