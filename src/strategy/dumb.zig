@@ -3,7 +3,7 @@ const Portfolio = @import("../engine/portfolio.zig").Portfolio;
 const Strategy = @import("../strategy/strategy.zig").Strategy;
 
 pub const DumbStrategy = struct {
-    pub fn decide(self: DumbStrategy, current_price: f64, portfolio_snap: *const Portfolio, current_time: usize) Intent {
+    pub fn decide(self: *DumbStrategy, current_price: f64, portfolio_snap: *const Portfolio, current_time: usize) Intent {
         _ = self;
         _ = current_price;
         _ = portfolio_snap;
