@@ -15,6 +15,7 @@ pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestC
         const final_equity = result.finalEquity(last_price);
         const pnl = result.pnl(config.starting_cash, last_price);
         const trade_count = result.trades.len;
+        std.debug.print("{any}", .{result.trades});
         std.debug.print("{d}, {d}, {d}, {d} \n", .{ i, final_equity, pnl, trade_count });
     }
 }
