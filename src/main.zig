@@ -8,20 +8,23 @@ const BacktestResult = @import("result.zig").BacktestResult;
 const BacktestConfig = @import("backtest/config.zig").BacktestConfig;
 const BuyEveryTick = @import("strategy/buy_every_tick.zig");
 const MeanReversion = @import("strategy/mean_reversion.zig");
+const Momentum = @import("strategy/momentum.zig");
 const runner = @import("research/runner.zig");
 
 pub fn main() !void {
-    var prices = [_]f64{ 100, 101, 102, 103, 104, 105, 106 };
+    var prices = [_]f64{ 100, 101, 99, 100, 101, 99, 100, 102, 104, 106, 108, 110, 112, 112, 111, 113, 112, 111 };
     const allocator = std.heap.page_allocator;
     const market = Market{ .prices = prices[0..] };
     const backtest_config = BacktestConfig{ .starting_cash = 1000 };
     //var dumb = Dumb.DumbStrategy{};
     //const dumb_strategy = Dumb.toStrategy(&dumb);
-    var mean_reversion = try MeanReversion.MeanReversion.init(allocator, 5, 0.03);
+    var mean_reversion = try MeanReversion.MeanReversion.init(allocator, 3, 0.01);
     const mean_reversion_strategy = MeanReversion.toStrategy(&mean_reversion);
+    var momentum = try Momentum.Momentum.init(allocator, 5, 0.03);
+    const momentum_strategy = Momentum.toStrategy(&momentum);
     //var buy_every_tick = BuyEveryTick.BuyEveryTick{};
     //const buy_every_tick_strategy = BuyEveryTick.toStrategy(&buy_every_tick);
     //var strategies = [_]Strategy{ dumb_strategy, buy_every_tick_strategy, mean_reversion_strategy };
-    var strategies = [_]Strategy{mean_reversion_strategy};
+    var strategies = [_]Strategy{ mean_reversion_strategy, momentum_strategy };
     try runner.run_batch(allocator, market, backtest_config, strategies[0..]);
 }
