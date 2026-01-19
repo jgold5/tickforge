@@ -7,6 +7,10 @@ pub const BacktestResult = struct {
     executed_sells: usize,
     rejected_buys: usize,
     rejected_sells: usize,
+    initial_equity: f64,
+    final_equity: f64,
+    trade_count: usize,
+    max_drawdown: f64,
     trades: []Trade,
 
     pub fn finalEquity(self: *const BacktestResult, final_price: f64) f64 {

@@ -28,17 +28,13 @@ pub const MeanReversion = struct {
         for (self.prices) |p| sum += p;
         const len_as_float: f64 = @floatFromInt(self.prices.len);
         const avg = sum / len_as_float;
-        std.debug.print("Time: {d}\n", .{current_time});
-        std.debug.print("Curr price: {d}\n", .{current_price});
-        std.debug.print("Avg: {d}\n", .{avg});
-        std.debug.print("Buy Thresh: {d}\n", .{avg * (1.0 - self.threshold_pct)});
-        std.debug.print("Sell Thresh: {d}\n", .{avg * (1.0 + self.threshold_pct)});
         if (current_price < avg * (1.0 - self.threshold_pct)) {
             return Intent{ .Buy = 1 };
         } else if (current_price > avg * (1.0 + self.threshold_pct)) {
             return Intent{ .Sell = 1 };
         }
         _ = portfolio_snap;
+        _ = current_time;
         return Intent.Hold;
     }
 };

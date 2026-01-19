@@ -19,16 +19,28 @@ pub const Engine = struct {
         var rejected_sells: usize = 0;
         var executed_buys: usize = 0;
         var executed_sells: usize = 0;
+        const initial_equity = self.portfolio.cash;
         var trades = std.ArrayList(Trade).init(allocator);
+        var peak_equity = initial_equity;
+        var max_drawdown: f64 = 0;
         while (self.time < self.market.len()) {
             const price = self.market.price_at(self.time);
             const intent = self.strategy.decide(price, &self.portfolio, self.time);
             //intent execution
             try self.execute(intent, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+            const equity = self.portfolio.cash + self.portfolio.position * price;
+            if (equity > peak_equity) {
+                peak_equity = equity;
+            } else {
+                const drawdown = (equity - peak_equity) / peak_equity;
+                if (drawdown < max_drawdown) {
+                    max_drawdown = drawdown;
+                }
+            }
             self.time += 1;
         }
-        //const curr_price = self.market.price_at(self.time - 1);
-        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice() };
+        const last_price = self.market.price_at(self.time - 1);
+        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown };
     }
 
     fn execute(self: *Engine, intent: Intent, price: f64, executed_buys: *usize, executed_sells: *usize, rejected_buys: *usize, rejected_sells: *usize, trade_list: *std.ArrayList(Trade), time: usize) !void {
