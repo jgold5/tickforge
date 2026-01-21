@@ -45,5 +45,5 @@ pub fn meanReversionDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio
 }
 
 pub fn toStrategy(self: *MeanReversion) Strategy {
-    return Strategy{ .ctx = self, .decideFn = meanReversionDecideAdapter };
+    return Strategy{ .ctx = self, .decideFn = meanReversionDecideAdapter, .name = "Mean Reversion" };
 }

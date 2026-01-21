@@ -6,16 +6,23 @@ const Engine = @import("../engine/engine.zig").Engine;
 const Portfolio = @import("../engine/portfolio.zig").Portfolio;
 
 pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestConfig, strategies: []Strategy) !void {
-    std.debug.print("Strategy, Final Equity, PnL, Trade Count\n", .{});
-    for (strategies, 0..) |strategy, i| {
+    for (strategies) |strategy| {
         const portfolio = Portfolio.init(config.starting_cash);
         var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0 };
         const result = try engine.run(allocator);
         const last_price = market.price_at(market.prices.len - 1);
-        const final_equity = result.finalEquity(last_price);
+        //const final_equity = result.finalEquity(last_price);
         const pnl = result.pnl(config.starting_cash, last_price);
-        const trade_count = result.trades.len;
-        std.debug.print("{d}", .{result.max_drawdown});
-        std.debug.print("{d}, {d}, {d}, {d} \n", .{ i, final_equity, pnl, trade_count });
+        std.debug.print(
+            \\Strategy: {s}
+            \\Initial Equity: {d:.2}
+            \\Final Equity: {d:.2}
+            \\PnL: {d:.2}
+            \\Return: {d:.2}%
+            \\Trades: {}
+            \\Max drawdown: {d:.2}%
+            \\
+            \\
+        , .{ result.strategy_name, result.initial_equity, result.final_equity, pnl, (result.final_equity - result.initial_equity) / result.initial_equity * 100.0, result.trade_count, result.max_drawdown * 100 });
     }
 }

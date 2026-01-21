@@ -45,5 +45,5 @@ pub fn momentumDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_snap
 }
 
 pub fn toStrategy(self: *Momentum) Strategy {
-    return Strategy{ .ctx = self, .decideFn = momentumDecideAdapter };
+    return Strategy{ .ctx = self, .decideFn = momentumDecideAdapter, .name = "Momentum" };
 }

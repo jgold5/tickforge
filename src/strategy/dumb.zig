@@ -23,5 +23,5 @@ pub fn dumbDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_snap: *c
 }
 
 pub fn toStrategy(dumb: *DumbStrategy) Strategy {
-    return Strategy{ .ctx = dumb, .decideFn = dumbDecideAdapter };
+    return Strategy{ .ctx = dumb, .decideFn = dumbDecideAdapter, .name = "Dumb" };
 }

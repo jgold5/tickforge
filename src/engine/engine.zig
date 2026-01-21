@@ -40,10 +40,11 @@ pub const Engine = struct {
             self.time += 1;
         }
         const last_price = self.market.price_at(self.time - 1);
-        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown };
+        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name };
     }
 
     fn execute(self: *Engine, intent: Intent, price: f64, executed_buys: *usize, executed_sells: *usize, rejected_buys: *usize, rejected_sells: *usize, trade_list: *std.ArrayList(Trade), time: usize) !void {
+        const enable_trade_logging = true;
         switch (intent) {
             .Hold => {},
             .Buy => |qty| {
@@ -52,6 +53,7 @@ pub const Engine = struct {
                     self.portfolio.position += qty;
                     executed_buys.* += 1;
                     try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Buy });
+                    if (enable_trade_logging) std.debug.print("[{s}] t={d} BUY {d} @ {d:.2}\n", .{ self.strategy.name, self.time, qty, price });
                 } else {
                     rejected_buys.* += 1;
                 }
@@ -63,6 +65,7 @@ pub const Engine = struct {
                     self.portfolio.position -= qty;
                     executed_sells.* += 1;
                     try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Sell });
+                    if (enable_trade_logging) std.debug.print("[{s}] t={d} SELL {d} @ {d:.2}\n", .{ self.strategy.name, self.time, qty, price });
                 } else {
                     rejected_sells.* += 1;
                 }
