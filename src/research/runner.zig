@@ -22,7 +22,6 @@ pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestC
             \\Trades: {}
             \\Max drawdown: {d:.2}%
             \\
-            \\
         , .{ result.strategy_name, result.initial_equity, result.final_equity, pnl, (result.final_equity - result.initial_equity) / result.initial_equity * 100.0, result.trade_count, result.max_drawdown * 100 });
     }
 }
