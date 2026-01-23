@@ -24,7 +24,7 @@ pub const Engine = struct {
         var peak_equity = initial_equity;
         var max_drawdown: f64 = 0;
         while (self.time < self.market.len()) {
-            const price = self.market.price_at(self.time);
+            const price = self.market.priceAt(self.time);
             const intent = self.strategy.decide(price, &self.portfolio, self.time);
             //intent execution
             try self.execute(intent, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
@@ -39,7 +39,7 @@ pub const Engine = struct {
             }
             self.time += 1;
         }
-        const last_price = self.market.price_at(self.time - 1);
+        const last_price = self.market.priceAt(self.time - 1);
         return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name };
     }
 

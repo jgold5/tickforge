@@ -1,11 +1,14 @@
 pub const Market = struct {
-    prices: []f64,
+    ctx: *anyopaque,
+    lenFn: *const fn (*anyopaque) usize,
+    priceAtFn: *const fn (*anyopaque, usize) f64,
+    prices: []const f64,
 
     pub fn len(self: *const Market) usize {
-        return self.prices.len;
+        return self.lenFn(self.ctx);
     }
 
-    pub fn price_at(self: *const Market, t: usize) f64 {
-        return self.prices[t];
+    pub fn priceAt(self: *const Market, t: usize) f64 {
+        return self.priceAtFn(self.ctx, t);
     }
 };

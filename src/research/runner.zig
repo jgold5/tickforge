@@ -10,7 +10,7 @@ pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestC
         const portfolio = Portfolio.init(config.starting_cash);
         var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0 };
         const result = try engine.run(allocator);
-        const last_price = market.price_at(market.prices.len - 1);
+        const last_price = market.priceAt(market.prices.len - 1);
         //const final_equity = result.finalEquity(last_price);
         const pnl = result.pnl(config.starting_cash, last_price);
         std.debug.print(

@@ -1,5 +1,5 @@
 const std = @import("std");
-const Market = @import("engine/market.zig").Market;
+const SyntheticMarket = @import("market/synthetic.zig");
 const Portfolio = @import("engine/portfolio.zig").Portfolio;
 const Strategy = @import("strategy/strategy.zig").Strategy;
 const Dumb = @import("strategy/dumb.zig");
@@ -14,7 +14,8 @@ const runner = @import("research/runner.zig");
 pub fn main() !void {
     var prices = [_]f64{ 100, 101, 99, 100, 101, 99, 100, 102, 104, 106, 108, 110, 112, 112, 111, 113, 112, 111 };
     const allocator = std.heap.page_allocator;
-    const market = Market{ .prices = prices[0..] };
+    var synthetic_market = SyntheticMarket.SyntheticMarket{ .prices = prices[0..] };
+    const market = SyntheticMarket.toMarket(&synthetic_market);
     const backtest_config = BacktestConfig{ .starting_cash = 10000 };
     var dumb = Dumb.DumbStrategy{};
     const dumb_strategy = Dumb.toStrategy(&dumb);
