@@ -13,6 +13,8 @@ pub const Engine = struct {
     portfolio: Portfolio,
     time: usize,
     strategy: Strategy,
+    execution_mode: ExecutionMode,
+    pending_intent: ?Intent,
 
     pub fn run(self: *Engine, allocator: std.mem.Allocator) !BacktestResult {
         var rejected_buys: usize = 0;
@@ -26,9 +28,19 @@ pub const Engine = struct {
         const equity_curve: []f64 = try allocator.alloc(f64, self.market.len());
         while (self.time < self.market.len()) {
             const price = self.market.priceAt(self.time);
+            if (self.execution_mode == ExecutionMode.NextTick) {
+                if (self.pending_intent) |pi| {
+                    try self.execute(pi, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+                }
+                self.pending_intent = null;
+            }
             const intent = self.strategy.decide(price, &self.portfolio, self.time);
             //intent execution
-            try self.execute(intent, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+            if (self.execution_mode == ExecutionMode.NextTick) {
+                self.pending_intent = intent;
+            } else {
+                try self.execute(intent, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+            }
             const equity = self.portfolio.cash + self.portfolio.position * price;
             equity_curve[self.time] = equity;
             if (equity > peak_equity) {
@@ -76,3 +88,5 @@ pub const Engine = struct {
         }
     }
 };
+
+pub const ExecutionMode = enum { SameTick, NextTick };
