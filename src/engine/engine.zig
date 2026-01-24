@@ -7,6 +7,7 @@ const DumbStrategy = @import("../strategy/dumb.zig").DumbStrategy;
 const Intent = @import("../strategy/intent.zig").Intent;
 const BuyEveryTick = @import("../strategy/buy_every_tick.zig").BuyEveryTick;
 const Trade = @import("trade.zig").Trade;
+const ExecutionModel = @import("execution.zig");
 
 const enable_decision_logging = true;
 const enable_execution_logging = true;
@@ -19,6 +20,7 @@ pub const Engine = struct {
     execution_mode: ExecutionMode,
     pending_intent: ?Intent,
     pending_decision_time: ?usize,
+    execution_model: ExecutionModel.ExecutionModel,
 
     pub fn run(self: *Engine, allocator: std.mem.Allocator) !BacktestResult {
         var rejected_buys: usize = 0;
@@ -72,29 +74,43 @@ pub const Engine = struct {
         return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name, .equity_curve = equity_curve };
     }
 
-    fn execute(self: *Engine, intent: Intent, price: f64, executed_buys: *usize, executed_sells: *usize, rejected_buys: *usize, rejected_sells: *usize, trade_list: *std.ArrayList(Trade), time: usize) !void {
+    fn execute(
+        self: *Engine,
+        intent: Intent,
+        price: f64,
+        executed_buys: *usize,
+        executed_sells: *usize,
+        rejected_buys: *usize,
+        rejected_sells: *usize,
+        trade_list: *std.ArrayList(Trade),
+        time: usize,
+    ) !void {
         switch (intent) {
             .Hold => {},
             .Buy => |qty| {
-                if (self.portfolio.cash >= (price * qty)) {
-                    self.portfolio.cash -= (price * qty);
-                    self.portfolio.position += qty;
-                    executed_buys.* += 1;
-                    try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Buy });
-                } else {
+                const execution_result = self.execution_model.compute(.Buy, price, qty);
+                const total_cost = execution_result.exec_price * qty + execution_result.fee;
+                if (total_cost > self.portfolio.cash) {
                     rejected_buys.* += 1;
+                    return;
                 }
+                self.portfolio.cash -= total_cost;
+                self.portfolio.position += qty;
+                executed_buys.* += 1;
+                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Buy });
                 std.debug.assert(self.portfolio.cash >= 0);
             },
             .Sell => |qty| {
-                if (self.portfolio.position >= qty) {
-                    self.portfolio.cash += (price * qty);
-                    self.portfolio.position -= qty;
-                    executed_sells.* += 1;
-                    try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Sell });
-                } else {
+                const execution_result = self.execution_model.compute(.Sell, price, qty);
+                if (self.portfolio.position < qty) {
                     rejected_sells.* += 1;
+                    return;
                 }
+                self.portfolio.cash += execution_result.exec_price * qty;
+                self.portfolio.cash -= execution_result.fee;
+                self.portfolio.position -= qty;
+                executed_sells.* += 1;
+                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Sell });
                 std.debug.assert(self.portfolio.position >= 0);
             },
         }
