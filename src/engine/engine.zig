@@ -9,8 +9,8 @@ const BuyEveryTick = @import("../strategy/buy_every_tick.zig").BuyEveryTick;
 const Trade = @import("trade.zig").Trade;
 const ExecutionModel = @import("execution.zig");
 
-const enable_decision_logging = true;
-const enable_execution_logging = true;
+const enable_decision_logging = false;
+const enable_execution_logging = false;
 
 pub const Engine = struct {
     market: Market,
@@ -70,8 +70,9 @@ pub const Engine = struct {
             }
             self.time += 1;
         }
+        const tradesAsSlice = try trades.toOwnedSlice();
         const last_price = self.market.priceAt(self.time - 1);
-        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = try trades.toOwnedSlice(), .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name, .equity_curve = equity_curve };
+        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = tradesAsSlice, .initial_equity = initial_equity, .final_equity = self.portfolio.cash + self.portfolio.position * last_price, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name, .equity_curve = equity_curve, .total_fees = calcTotalFees(tradesAsSlice), .total_gross_value = calcTotalGrossValue(tradesAsSlice) };
     }
 
     fn execute(
@@ -141,4 +142,20 @@ fn logExecution(intent: Intent, name: []const u8, time: usize, decision_time: us
         },
         else => {},
     }
+}
+
+fn calcTotalFees(trades: []const Trade) f64 {
+    var tot: f64 = 0;
+    for (trades) |t| {
+        tot += t.fee;
+    }
+    return tot;
+}
+
+fn calcTotalGrossValue(trades: []const Trade) f64 {
+    var tot: f64 = 0;
+    for (trades) |t| {
+        tot += t.gross_value;
+    }
+    return tot;
 }

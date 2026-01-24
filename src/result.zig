@@ -14,6 +14,8 @@ pub const BacktestResult = struct {
     trades: []Trade,
     strategy_name: []const u8,
     equity_curve: []f64,
+    total_fees: f64 = 0,
+    total_gross_value: f64 = 0,
 
     pub fn finalEquity(self: *const BacktestResult, final_price: f64) f64 {
         return self.final_cash + (self.final_position * final_price);

@@ -14,17 +14,26 @@ pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestC
         var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0, .execution_mode = ExecutionMode.NextTick, .pending_intent = null, .pending_decision_time = null, .execution_model = ExecutionModel.initDefault() };
         const result = try engine.run(allocator);
         const last_price = market.priceAt(market.prices.len - 1);
-        //const final_equity = result.finalEquity(last_price);
         const pnl = result.pnl(config.starting_cash, last_price);
+        const ret = (result.final_equity - result.initial_equity) / result.initial_equity * 100.0;
+        const max_drawdown_pct = result.max_drawdown * 100;
         std.debug.print(
             \\Strategy: {s}
-            \\Initial Equity: {d:.2}
-            \\Final Equity: {d:.2}
-            \\PnL: {d:.2}
-            \\Return: {d:.2}%
-            \\Trades: {}
-            \\Max drawdown: {d:.2}%
+            \\    Initial Equity: {d:.2}
+            \\    Final Equity: {d:.2}
+            \\    PnL: {d:.2}
+            \\    Return: {d:.2}%
+            \\    Trades: {}
+            \\    Max drawdown: {d:.2}%
+            \\    Total fees: ${d:.2}
+            \\    Total gross traded: ${d:.2}
             \\
-        , .{ result.strategy_name, result.initial_equity, result.final_equity, pnl, (result.final_equity - result.initial_equity) / result.initial_equity * 100.0, result.trade_count, result.max_drawdown * 100 });
+        , .{ result.strategy_name, result.initial_equity, result.final_equity, pnl, ret, result.trade_count, max_drawdown_pct, result.total_fees, result.total_gross_value });
+        if (result.total_gross_value == 0) {
+            std.debug.print("    Cost as % of turnover: N/A\n", .{});
+        } else {
+            const cost_as_pct_turnover = (result.total_fees / result.total_gross_value) * 100;
+            std.debug.print("    Cost as % of turnover: {d:.2}%\n", .{cost_as_pct_turnover});
+        }
     }
 }
