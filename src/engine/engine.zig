@@ -97,7 +97,7 @@ pub const Engine = struct {
                 self.portfolio.cash -= total_cost;
                 self.portfolio.position += qty;
                 executed_buys.* += 1;
-                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Buy });
+                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Buy, .fee = execution_result.fee, .gross_value = execution_result.exec_price * qty });
                 std.debug.assert(self.portfolio.cash >= 0);
             },
             .Sell => |qty| {
@@ -110,7 +110,7 @@ pub const Engine = struct {
                 self.portfolio.cash -= execution_result.fee;
                 self.portfolio.position -= qty;
                 executed_sells.* += 1;
-                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Sell });
+                try trade_list.append(Trade{ .price = execution_result.exec_price, .time = time, .quantity = qty, .side = .Sell, .fee = execution_result.fee, .gross_value = execution_result.exec_price * qty });
                 std.debug.assert(self.portfolio.position >= 0);
             },
         }

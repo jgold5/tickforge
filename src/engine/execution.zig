@@ -1,4 +1,4 @@
-const Side = @import("trade.zig").Trade.Side;
+const Side = @import("trade.zig").Side;
 
 pub const ExecutionModel = struct {
     commission_per_trade: f64,

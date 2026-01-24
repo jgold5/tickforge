@@ -3,6 +3,8 @@ pub const Trade = struct {
     side: Side,
     price: f64,
     quantity: f64,
-
-    pub const Side = enum { Buy, Sell };
+    fee: f64 = 0,
+    gross_value: f64 = 0,
 };
+
+pub const Side = enum { Buy, Sell };
