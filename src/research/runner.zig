@@ -9,31 +9,37 @@ const Intent = @import("../strategy/intent.zig").Intent;
 const ExecutionModel = @import("../engine/execution.zig").ExecutionModel;
 
 pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestConfig, strategies: []Strategy) !void {
+    std.debug.print(
+        "{s:14} | {s:14} | {s:14} | {s:14} | {s:14} | {s:8}\n",
+        .{ "Strategy", "Gross", "Net", "Fees", "Turnover", "Cost %" },
+    );
+    std.debug.print(
+        "{s:-<14}-+-{s:-<14}-+-{s:-<14}-+-{s:-<14}-+-{s:-<14}-+-{s:-<8}\n",
+        .{ "", "", "", "", "", "" },
+    );
     for (strategies) |strategy| {
         const portfolio = Portfolio.init(config.starting_cash);
         var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0, .execution_mode = ExecutionMode.NextTick, .pending_intent = null, .pending_decision_time = null, .execution_model = ExecutionModel.initDefault() };
         const result = try engine.run(allocator);
-        const last_price = market.priceAt(market.prices.len - 1);
-        const pnl = result.pnl(config.starting_cash, last_price);
-        const ret = (result.final_equity - result.initial_equity) / result.initial_equity * 100.0;
-        const max_drawdown_pct = result.max_drawdown * 100;
+        const cost_pct =
+            if (result.total_gross_value > 0)
+                (result.total_fees / result.total_gross_value) * 100
+            else
+                null;
         std.debug.print(
-            \\Strategy: {s}
-            \\    Initial Equity: {d:.2}
-            \\    Final Equity: {d:.2}
-            \\    PnL: {d:.2}
-            \\    Return: {d:.2}%
-            \\    Trades: {}
-            \\    Max drawdown: {d:.2}%
-            \\    Total fees: ${d:.2}
-            \\    Total gross traded: ${d:.2}
-            \\
-        , .{ result.strategy_name, result.initial_equity, result.final_equity, pnl, ret, result.trade_count, max_drawdown_pct, result.total_fees, result.total_gross_value });
-        if (result.total_gross_value == 0) {
-            std.debug.print("    Cost as % of turnover: N/A\n", .{});
+            "{s:14} | {d:14.2} | {d:14.2} | {d:14.2} | {d:14.2} | ",
+            .{
+                result.strategy_name,
+                result.gross_pnl,
+                result.net_pnl,
+                result.total_fees,
+                result.total_gross_value,
+            },
+        );
+        if (cost_pct) |pct| {
+            std.debug.print("{d:7.2}%\n", .{pct});
         } else {
-            const cost_as_pct_turnover = (result.total_fees / result.total_gross_value) * 100;
-            std.debug.print("    Cost as % of turnover: {d:.2}%\n", .{cost_as_pct_turnover});
+            std.debug.print("{s:8}\n", .{"N/A"});
         }
     }
 }
