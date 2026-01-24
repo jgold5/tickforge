@@ -10,7 +10,7 @@ const Intent = @import("../strategy/intent.zig").Intent;
 pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestConfig, strategies: []Strategy) !void {
     for (strategies) |strategy| {
         const portfolio = Portfolio.init(config.starting_cash);
-        var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0, .execution_mode = ExecutionMode.NextTick, .pending_intent = null };
+        var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0, .execution_mode = ExecutionMode.NextTick, .pending_intent = null, .pending_decision_time = null };
         const result = try engine.run(allocator);
         const last_price = market.priceAt(market.prices.len - 1);
         //const final_equity = result.finalEquity(last_price);

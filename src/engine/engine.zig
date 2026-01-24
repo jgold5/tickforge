@@ -8,6 +8,9 @@ const Intent = @import("../strategy/intent.zig").Intent;
 const BuyEveryTick = @import("../strategy/buy_every_tick.zig").BuyEveryTick;
 const Trade = @import("trade.zig").Trade;
 
+const enable_decision_logging = true;
+const enable_execution_logging = true;
+
 pub const Engine = struct {
     market: Market,
     portfolio: Portfolio,
@@ -15,6 +18,7 @@ pub const Engine = struct {
     strategy: Strategy,
     execution_mode: ExecutionMode,
     pending_intent: ?Intent,
+    pending_decision_time: ?usize,
 
     pub fn run(self: *Engine, allocator: std.mem.Allocator) !BacktestResult {
         var rejected_buys: usize = 0;
@@ -31,15 +35,26 @@ pub const Engine = struct {
             if (self.execution_mode == ExecutionMode.NextTick) {
                 if (self.pending_intent) |pi| {
                     try self.execute(pi, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+                    if (enable_execution_logging) {
+                        logExecution(self.pending_intent.?, self.strategy.name, self.time, self.pending_decision_time.?, price);
+                    }
                 }
                 self.pending_intent = null;
+                self.pending_decision_time = null;
             }
             const intent = self.strategy.decide(price, &self.portfolio, self.time);
+            if (enable_decision_logging) {
+                logDecision(intent, self.strategy.name, self.time, price);
+            }
             //intent execution
             if (self.execution_mode == ExecutionMode.NextTick) {
                 self.pending_intent = intent;
+                self.pending_decision_time = self.time;
             } else {
                 try self.execute(intent, price, &executed_buys, &executed_sells, &rejected_buys, &rejected_sells, &trades, self.time);
+                if (enable_execution_logging) {
+                    logExecution(intent, self.strategy.name, self.time, self.time, price);
+                }
             }
             const equity = self.portfolio.cash + self.portfolio.position * price;
             equity_curve[self.time] = equity;
@@ -58,7 +73,6 @@ pub const Engine = struct {
     }
 
     fn execute(self: *Engine, intent: Intent, price: f64, executed_buys: *usize, executed_sells: *usize, rejected_buys: *usize, rejected_sells: *usize, trade_list: *std.ArrayList(Trade), time: usize) !void {
-        const enable_trade_logging = true;
         switch (intent) {
             .Hold => {},
             .Buy => |qty| {
@@ -67,7 +81,6 @@ pub const Engine = struct {
                     self.portfolio.position += qty;
                     executed_buys.* += 1;
                     try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Buy });
-                    if (enable_trade_logging) std.debug.print("[{s}] t={d} BUY {d} @ {d:.2}\n", .{ self.strategy.name, self.time, qty, price });
                 } else {
                     rejected_buys.* += 1;
                 }
@@ -79,7 +92,6 @@ pub const Engine = struct {
                     self.portfolio.position -= qty;
                     executed_sells.* += 1;
                     try trade_list.append(Trade{ .price = price, .time = time, .quantity = qty, .side = Trade.Side.Sell });
-                    if (enable_trade_logging) std.debug.print("[{s}] t={d} SELL {d} @ {d:.2}\n", .{ self.strategy.name, self.time, qty, price });
                 } else {
                     rejected_sells.* += 1;
                 }
@@ -90,3 +102,27 @@ pub const Engine = struct {
 };
 
 pub const ExecutionMode = enum { SameTick, NextTick };
+
+fn logDecision(intent: Intent, name: []const u8, time: usize, price: f64) void {
+    switch (intent) {
+        .Buy => {
+            std.debug.print("[{s}] decided BUY @ t={} (price={d:.2})\n", .{ name, time, price });
+        },
+        .Sell => {
+            std.debug.print("[{s}] decided SELL @ t={} (price={d:.2})\n", .{ name, time, price });
+        },
+        else => {},
+    }
+}
+
+fn logExecution(intent: Intent, name: []const u8, time: usize, decision_time: usize, price: f64) void {
+    switch (intent) {
+        .Buy => {
+            std.debug.print("[{s}] executed BUY @ t={} (price={d:.2}, decided @ t={})\n", .{ name, time, price, decision_time });
+        },
+        .Sell => {
+            std.debug.print("[{s}] executed SELL @ t={} (price={d:.2}, decided @ t={})\n", .{ name, time, price, decision_time });
+        },
+        else => {},
+    }
+}
