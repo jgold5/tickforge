@@ -10,6 +10,7 @@ const BuyEveryTick = @import("strategy/buy_every_tick.zig");
 const MeanReversion = @import("strategy/mean_reversion.zig");
 const Momentum = @import("strategy/momentum.zig");
 const Runner = @import("research/runner.zig");
+const SweepTestResult = @import("research/runner.zig").SweepResult;
 
 pub fn main() !void {
     var prices = [_]f64{
@@ -52,5 +53,37 @@ pub fn main() !void {
     const base_strategies = [_]Strategy{ dumb_strategy, buy_every_tick_strategy, mean_reversion_strategy };
     try strategies.appendSlice(&base_strategies);
     try strategies.appendSlice(try momentum_strategies.toOwnedSlice());
-    try Runner.runBatch(allocator, market, backtest_config, strategies.items);
+    const results = try Runner.runBatch(allocator, market, backtest_config, strategies.items);
+    std.sort.heap(SweepTestResult, results, {}, lessThanByNetPnlDesc);
+    std.debug.print(
+        "{s:14} | {s:14} | {s:14} | {s:14} | {s:14} | {s:8}\n",
+        .{ "Strategy", "Gross", "Net", "Fees", "Turnover", "Cost %" },
+    );
+    for (results) |result| {
+        const backtest_result = result.result;
+        const cost_pct =
+            if (backtest_result.total_gross_value > 0)
+                (backtest_result.total_fees / backtest_result.total_gross_value) * 100
+            else
+                null;
+        std.debug.print(
+            "{s:14} | {d:14.2} | {d:14.2} | {d:14.2} | {d:14.2} | ",
+            .{
+                backtest_result.strategy_name,
+                backtest_result.gross_pnl,
+                backtest_result.net_pnl,
+                backtest_result.total_fees,
+                backtest_result.total_gross_value,
+            },
+        );
+        if (cost_pct) |pct| {
+            std.debug.print("{d:7.2}%\n", .{pct});
+        } else {
+            std.debug.print("{s:8}\n", .{"N/A"});
+        }
+    }
+}
+
+pub fn lessThanByNetPnlDesc(_: void, lhs: SweepTestResult, rhs: SweepTestResult) bool {
+    return lhs.result.net_pnl > rhs.result.net_pnl;
 }
