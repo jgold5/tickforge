@@ -8,7 +8,7 @@ const ExecutionMode = @import("../engine/engine.zig").ExecutionMode;
 const Intent = @import("../strategy/intent.zig").Intent;
 const ExecutionModel = @import("../engine/execution.zig").ExecutionModel;
 
-pub fn run_batch(allocator: std.mem.Allocator, market: Market, config: BacktestConfig, strategies: []Strategy) !void {
+pub fn runBatch(allocator: std.mem.Allocator, market: Market, config: BacktestConfig, strategies: []Strategy) !void {
     std.debug.print(
         "{s:14} | {s:14} | {s:14} | {s:14} | {s:14} | {s:8}\n",
         .{ "Strategy", "Gross", "Net", "Fees", "Turnover", "Cost %" },

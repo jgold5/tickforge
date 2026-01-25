@@ -9,11 +9,19 @@ const BacktestConfig = @import("backtest/config.zig").BacktestConfig;
 const BuyEveryTick = @import("strategy/buy_every_tick.zig");
 const MeanReversion = @import("strategy/mean_reversion.zig");
 const Momentum = @import("strategy/momentum.zig");
-const runner = @import("research/runner.zig");
+const Runner = @import("research/runner.zig");
 
 pub fn main() !void {
-    var prices = [_]f64{ 100, 101, 99, 100, 101, 99, 100, 102, 104, 106, 108, 110, 112, 112, 111, 113, 112, 111 };
-    const allocator = std.heap.page_allocator;
+    var prices = [_]f64{
+        100, 101, 99,  102, 100, 98,  99,  101,
+        103, 102, 104, 103, 101, 100, 98,  99,
+        97,  96,  98,  100, 102, 101, 103, 105,
+        107, 106, 108, 110, 109, 107, 108, 106,
+        104, 103, 105, 107, 106, 108, 110, 112,
+    };
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
     var synthetic_market = SyntheticMarket.SyntheticMarket{ .prices = prices[0..] };
     const market = SyntheticMarket.toMarket(&synthetic_market);
     const backtest_config = BacktestConfig{ .starting_cash = 10000 };
@@ -21,10 +29,28 @@ pub fn main() !void {
     const dumb_strategy = Dumb.toStrategy(&dumb);
     var mean_reversion = try MeanReversion.MeanReversion.init(allocator, 3, 0.01);
     const mean_reversion_strategy = MeanReversion.toStrategy(&mean_reversion);
-    var momentum = try Momentum.Momentum.init(allocator, 5, 0.03);
-    const momentum_strategy = Momentum.toStrategy(&momentum);
+
+    const lookbacks = [_]usize{ 1, 3, 5, 9 };
+    const thresholds = [_]f64{ 0.02, 0.03, 10.0 };
+    var momentum_strategies = std.ArrayList(Strategy).init(allocator);
+    defer momentum_strategies.deinit();
+    for (lookbacks) |lb| {
+        for (thresholds) |th| {
+            const momentum_params = Momentum.MomentumParams{ .threshold = th, .lookback = lb };
+            const momentum_ptr = try allocator.create(Momentum.Momentum);
+            momentum_ptr.* = try Momentum.Momentum.init(allocator, momentum_params);
+            var momentum_strategy = Momentum.toStrategy(momentum_ptr);
+            const label = try std.fmt.allocPrint(allocator, "Momentum(lb={}, th={d:.2})", .{ lb, th });
+            momentum_strategy.name = label;
+            try momentum_strategies.append(momentum_strategy);
+        }
+    }
     var buy_every_tick = BuyEveryTick.BuyEveryTick{};
     const buy_every_tick_strategy = BuyEveryTick.toStrategy(&buy_every_tick);
-    var strategies = [_]Strategy{ dumb_strategy, buy_every_tick_strategy, mean_reversion_strategy, momentum_strategy };
-    try runner.run_batch(allocator, market, backtest_config, strategies[0..]);
+    var strategies = std.ArrayList(Strategy).init(allocator);
+    defer strategies.deinit();
+    const base_strategies = [_]Strategy{ dumb_strategy, buy_every_tick_strategy, mean_reversion_strategy };
+    try strategies.appendSlice(&base_strategies);
+    try strategies.appendSlice(try momentum_strategies.toOwnedSlice());
+    try Runner.runBatch(allocator, market, backtest_config, strategies.items);
 }
