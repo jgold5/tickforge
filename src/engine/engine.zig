@@ -28,11 +28,12 @@ pub const Engine = struct {
         var rejected_sells: usize = 0;
         var executed_buys: usize = 0;
         var executed_sells: usize = 0;
+        const start_time: usize = 0;
         const initial_equity = self.portfolio.cash + self.portfolio.position * self.market.priceAt(self.time);
         var trades = std.ArrayList(Trade).init(allocator);
         var peak_equity = initial_equity;
         var max_drawdown: f64 = 0;
-        const equity_curve: []f64 = try allocator.alloc(f64, self.market.len());
+        const equity_curve: []f64 = try allocator.alloc(f64, self.market.len() - start_time);
         while (self.time < self.market.len()) {
             const price = self.market.priceAt(self.time);
             if (self.execution_mode == ExecutionMode.NextTick) {
@@ -60,7 +61,7 @@ pub const Engine = struct {
                 }
             }
             const equity = self.portfolio.cash + self.portfolio.position * price;
-            equity_curve[self.time] = equity;
+            equity_curve[self.time - start_time] = equity;
             if (equity > peak_equity) {
                 peak_equity = equity;
             } else {
@@ -74,7 +75,7 @@ pub const Engine = struct {
         const tradesAsSlice = try trades.toOwnedSlice();
         const last_price = self.market.priceAt(self.time - 1);
         const final_equity = self.portfolio.cash + self.portfolio.position * last_price;
-        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = tradesAsSlice, .initial_equity = initial_equity, .final_equity = final_equity, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name, .equity_curve = equity_curve, .total_fees = Metrics.calcTotalFees(tradesAsSlice), .total_gross_value = Metrics.calcTotalGrossValue(tradesAsSlice), .net_pnl = Metrics.calcNetPnL(initial_equity, self.portfolio.cash, self.portfolio.position, last_price), .gross_pnl = Metrics.calcGrossPnL(initial_equity, tradesAsSlice, &self.market) };
+        return BacktestResult{ .final_cash = self.portfolio.cash, .final_position = self.portfolio.position, .executed_buys = executed_buys, .executed_sells = executed_sells, .rejected_buys = rejected_buys, .rejected_sells = rejected_sells, .trades = tradesAsSlice, .initial_equity = initial_equity, .final_equity = final_equity, .trade_count = executed_buys + executed_sells, .max_drawdown = max_drawdown, .strategy_name = self.strategy.name, .equity_curve = equity_curve, .total_fees = Metrics.calcTotalFees(tradesAsSlice), .total_gross_value = Metrics.calcTotalGrossValue(tradesAsSlice), .net_pnl = final_equity - initial_equity, .gross_pnl = Metrics.calcGrossPnL(initial_equity, tradesAsSlice, &self.market), .start_time = start_time, .end_time = self.time };
     }
 
     fn execute(

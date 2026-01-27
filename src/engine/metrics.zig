@@ -38,8 +38,3 @@ pub fn calcGrossPnL(initial_equity: f64, trades: []const Trade, market: *const M
     const gross_equity = gross_cash + gross_position * final_price;
     return gross_equity - initial_equity;
 }
-
-pub fn calcNetPnL(initial_equity: f64, final_cash: f64, final_position: f64, final_price: f64) f64 {
-    const final_equity = final_cash + final_position * final_price;
-    return final_equity - initial_equity;
-}

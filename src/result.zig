@@ -18,12 +18,6 @@ pub const BacktestResult = struct {
     total_gross_value: f64 = 0,
     gross_pnl: f64 = 0,
     net_pnl: f64 = 0,
-
-    pub fn finalEquity(self: *const BacktestResult, final_price: f64) f64 {
-        return self.final_cash + (self.final_position * final_price);
-    }
-
-    pub fn pnl(self: *const BacktestResult, starting_cash: f64, final_price: f64) f64 {
-        return self.finalEquity(final_price) - starting_cash;
-    }
+    start_time: usize,
+    end_time: usize,
 };
