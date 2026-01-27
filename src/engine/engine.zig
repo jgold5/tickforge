@@ -22,6 +22,11 @@ pub const Engine = struct {
     pending_intent: ?Intent,
     pending_decision_time: ?usize,
     execution_model: ExecutionModel.ExecutionModel,
+    initial_portfolio: Portfolio,
+
+    pub fn init(market: Market, initial_portfolio: Portfolio, strategy: Strategy, execution_mode: ExecutionMode, execution_model: ExecutionModel.ExecutionModel) Engine {
+        return Engine{ .market = market, .initial_portfolio = initial_portfolio, .portfolio = initial_portfolio, .strategy = strategy, .time = 0, .execution_mode = execution_mode, .execution_model = execution_model, .pending_intent = null, .pending_decision_time = null };
+    }
 
     pub fn run(self: *Engine, allocator: std.mem.Allocator) !BacktestResult {
         var rejected_buys: usize = 0;
@@ -29,6 +34,13 @@ pub const Engine = struct {
         var executed_buys: usize = 0;
         var executed_sells: usize = 0;
         const start_time: usize = 0;
+        self.time = 0;
+        self.portfolio = self.initial_portfolio;
+        self.pending_intent = null;
+        self.pending_decision_time = null;
+        if (self.strategy.resetFn) |reset| {
+            reset(self.strategy.ctx);
+        }
         const initial_equity = self.portfolio.cash + self.portfolio.position * self.market.priceAt(self.time);
         var trades = std.ArrayList(Trade).init(allocator);
         var peak_equity = initial_equity;

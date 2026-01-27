@@ -18,5 +18,5 @@ pub fn buyEveryTickDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_
 }
 
 pub fn toStrategy(buyEveryTick: *BuyEveryTick) Strategy {
-    return Strategy{ .ctx = buyEveryTick, .decideFn = buyEveryTickDecideAdapter, .name = "Buy Every Tick" };
+    return Strategy{ .ctx = buyEveryTick, .decideFn = buyEveryTickDecideAdapter, .name = "Buy Every Tick", .resetFn = null };
 }

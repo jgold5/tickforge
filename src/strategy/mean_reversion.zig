@@ -37,6 +37,12 @@ pub const MeanReversion = struct {
         _ = current_time;
         return Intent.Hold;
     }
+
+    pub fn reset(self: *MeanReversion) void {
+        self.count = 0;
+        self.head = 0;
+        @memset(self.prices, 0);
+    }
 };
 
 pub fn meanReversionDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_snap: *const Portfolio, current_time: usize) Intent {
@@ -44,6 +50,11 @@ pub fn meanReversionDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio
     return mean.decide(current_price, portfolio_snap, current_time);
 }
 
+pub fn meanReversionResetAdapter(ctx: *anyopaque) void {
+    const mean: *MeanReversion = @ptrCast(@alignCast(ctx));
+    mean.reset();
+}
+
 pub fn toStrategy(self: *MeanReversion) Strategy {
-    return Strategy{ .ctx = self, .decideFn = meanReversionDecideAdapter, .name = "Mean Reversion" };
+    return Strategy{ .ctx = self, .decideFn = meanReversionDecideAdapter, .name = "Mean Reversion", .resetFn = meanReversionResetAdapter };
 }

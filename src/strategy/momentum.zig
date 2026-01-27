@@ -44,7 +44,7 @@ pub fn momentumDecideAdapter(ctx: *anyopaque, current_price: f64, portfolio_snap
 }
 
 pub fn toStrategy(self: *Momentum) Strategy {
-    return Strategy{ .ctx = self, .decideFn = momentumDecideAdapter, .name = "Momentum" };
+    return Strategy{ .ctx = self, .decideFn = momentumDecideAdapter, .name = "Momentum", .resetFn = null };
 }
 
 pub const MomentumParams = struct {

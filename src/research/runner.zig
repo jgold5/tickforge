@@ -13,9 +13,13 @@ pub fn runBatch(allocator: std.mem.Allocator, market: Market, config: BacktestCo
     var results = std.ArrayList(SweepResult).init(allocator);
     for (strategies) |strategy| {
         const portfolio = Portfolio.init(config.starting_cash);
-        var engine = Engine{ .market = market, .portfolio = portfolio, .strategy = strategy, .time = 0, .execution_mode = ExecutionMode.NextTick, .pending_intent = null, .pending_decision_time = null, .execution_model = ExecutionModel.initDefault() };
+        var engine = Engine.init(market, portfolio, strategy, ExecutionMode.NextTick, ExecutionModel.initDefault());
         const result = try engine.run(allocator);
         try results.append(SweepResult{ .label = strategy.name, .result = result });
+        const result1 = try engine.run(allocator);
+        try results.append(SweepResult{ .label = strategy.name, .result = result1 });
+        const result2 = try engine.run(allocator);
+        try results.append(SweepResult{ .label = strategy.name, .result = result2 });
     }
     return results.toOwnedSlice();
 }
